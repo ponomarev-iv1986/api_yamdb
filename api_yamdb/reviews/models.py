@@ -2,6 +2,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from .validators import validate_year
+from users.models import User
 
 MIN_REVIEW_SCORE = 1
 MAX_REVIEW_SCORE = 10
@@ -37,7 +38,7 @@ class Genre(models.Model):
     )
     slug = models.SlugField(
         'cлаг жанра',
-        max_length=50
+        max_length=50,
         unique=True
     )
 
