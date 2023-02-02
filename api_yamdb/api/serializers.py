@@ -5,13 +5,13 @@ from rest_framework.validators import ValidationError
 
 
 class UserRegSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(max_length=254, allow_blank=False)
+    email = serializers.EmailField(max_length=254, allow_blank=False)
     username = serializers.CharField(
         max_length=150,
         allow_blank=False,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+', message='Введите корректный username'
+                regex=r'^[\w.@+-]+\Z', message='Введите корректный username'
             )
         ],
     )
@@ -46,3 +46,31 @@ class TokenGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'confirmation_code')
+
+
+class UsersSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        max_length=150,
+        allow_blank=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+\Z', message='Введите корректный username'
+            )
+        ],
+        required=True,
+    )
+    email = serializers.EmailField(
+        max_length=254, required=True, allow_blank=False
+    )
+    role = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role',
+        )

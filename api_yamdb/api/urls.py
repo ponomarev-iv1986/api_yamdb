@@ -1,5 +1,13 @@
 from django.urls import include, path
-from .views import RegView, TokenGetView
+from .views import RegView, TokenGetView, UsersViewSet, UserMeViewSet
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+
+
+router.register('users', UsersViewSet, basename='users')
+router.register(r'users/(?P<username>\d+)', UsersViewSet, basename='users')
+router.register('users/me', UserMeViewSet, basename='usersme')
 
 urlpatterns = [
     path(
@@ -12,4 +20,5 @@ urlpatterns = [
         TokenGetView.as_view(),
         name='tokenget',
     ),
+    path('v1/', include(router.urls)),
 ]
