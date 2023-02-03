@@ -20,6 +20,7 @@ from .permissions import (
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 
 # Create your views here.
 class RegView(APIView):
@@ -85,10 +86,11 @@ class UsersViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-
-class UserMeViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    queryset = User.objects.all()
-    serializer_class = UsersSerializer
-    http_method_names = ['get', 'patch', 'delete']
+    # @action(
+    #     detail=False,
+    #     methods=['get', 'patch'],
+    #     url_path='me',
+    #     permission_classes=(permissions.IsAuthenticated,),
+    # )
+    # def me(self, request):
+    #     pass
