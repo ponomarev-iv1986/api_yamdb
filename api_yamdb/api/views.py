@@ -1,8 +1,10 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.permissions import AllowAny
-from .serializers import UserRegSerializer, TokenGetSerializer, UsersSerializer
+from .serializers import (
+    UserRegSerializer,
+    TokenGetSerializer,
+    UsersSerializer,
+)
 from rest_framework.response import Response
 import uuid
 from django.core.mail import send_mail
@@ -13,7 +15,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
 from .permissions import (
     IsAdmin,
-    IsModerator,
     IsUser,
 )
 from rest_framework import filters
@@ -22,10 +23,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
 class RegView(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         serializer = UserRegSerializer(data=request.data)
+        if User.objects.filter(
+            username=request.data.get('username'),
+            email=request.data.get('email'),
+        ).exists():
+            return Response(request.data, status=status.HTTP_200_OK)
         if serializer.is_valid():
             username = serializer.validated_data.get('username')
             email = serializer.validated_data.get('email')
@@ -47,22 +53,25 @@ class RegView(APIView):
 
 
 class TokenGetView(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         serializer = TokenGetSerializer(data=request.data)
-        serializer.is_valid()
-        username = serializer.validated_data.get('username')
-        user = get_object_or_404(User, username=username)
-        confirmation_code = serializer.data['confirmation_code']
-        if user.confirmation_code != confirmation_code:
-            return Response(
-                {'Не верный confirmation code'},
-                status=status.HTTP_400_BAD_REQUEST,
+        if serializer.is_valid():
+            username = serializer.validated_data.get('username')
+            user = get_object_or_404(User, username=username)
+            confirmation_code = serializer.validated_data.get(
+                'confirmation_code'
             )
-        token = RefreshToken.for_user(user)
+            if user.confirmation_code == confirmation_code:
+                token = RefreshToken.for_user(user)
+                return Response(
+                    {'token': str(token.access_token)},
+                    status=status.HTTP_200_OK,
+                )
         return Response(
-            {'token': str(token.access_token)}, status=status.HTTP_200_OK
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -73,19 +82,13 @@ class UsersViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('username',)
+    lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
 
 class UserMeViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticated,)
+
     queryset = User.objects.all()
     serializer_class = UsersSerializer
-
-    def get_queryset(self):
-        user = get_object_or_404(User, username=self.kwargs.get("username"))
-        return user
-
-    def perform_update(self, serializer):
-        super(UserMeViewSet, self).perform_update(serializer)
-
-    def perform_destroy(self, serializer):
-        super(UserMeViewSet, self).perform_destroy(serializer)
+    http_method_names = ['get', 'patch', 'delete']

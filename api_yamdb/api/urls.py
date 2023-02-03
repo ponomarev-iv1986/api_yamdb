@@ -6,8 +6,7 @@ router = DefaultRouter()
 
 
 router.register('users', UsersViewSet, basename='users')
-router.register(r'users/(?P<username>\d+)', UsersViewSet, basename='users')
-router.register('users/me', UserMeViewSet, basename='usersme')
+router.register('users/me/', UserMeViewSet, basename='usersme')
 
 urlpatterns = [
     path(
@@ -18,7 +17,7 @@ urlpatterns = [
     path(
         'v1/auth/token/',
         TokenGetView.as_view(),
-        name='tokenget',
+        name='token',
     ),
     path('v1/', include(router.urls)),
 ]

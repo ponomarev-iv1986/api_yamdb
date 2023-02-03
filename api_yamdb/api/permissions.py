@@ -1,7 +1,4 @@
-from django.contrib.auth import get_user_model
 from rest_framework.permissions import SAFE_METHODS, BasePermission
-
-User = get_user_model()
 
 
 class IsUser(BasePermission):
@@ -9,9 +6,11 @@ class IsUser(BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            if request.user.role in SAFE_METHODS:
+            if request.user.role in self.allowed_user_roles:
+                if request.user.method in SAFE_METHODS:
+                    return True
                 return True
-        return False
+            return False
 
 
 class IsModerator(BasePermission):
@@ -20,8 +19,10 @@ class IsModerator(BasePermission):
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             if request.user.role in self.allowed_user_roles:
+                if request.user.method in SAFE_METHODS:
+                    return True
                 return True
-        return False
+            return False
 
 
 class IsAdmin(BasePermission):
@@ -29,6 +30,10 @@ class IsAdmin(BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            if request.user.role in self.allowed_user_roles:
+            if (
+                request.user.role in self.allowed_user_roles
+                or request.user
+                and request.user.is_superuser
+            ):
                 return True
         return False
