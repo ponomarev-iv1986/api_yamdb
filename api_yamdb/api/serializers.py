@@ -2,6 +2,8 @@ from rest_framework import serializers
 from users.models import User
 from django.core.validators import RegexValidator
 from rest_framework.validators import ValidationError
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from reviews.models import (Category,
                             Genre,
                             Title,
@@ -48,6 +50,9 @@ class UserRegSerializer(serializers.ModelSerializer):
 
 
 class TokenGetSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
     class Meta:
         model = User
         fields = ('username', 'confirmation_code')
@@ -67,7 +72,7 @@ class UsersSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254, required=True, allow_blank=False
     )
-    role = serializers.StringRelatedField(read_only=True)
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -79,6 +84,25 @@ class UsersSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+
+
+    def validate_username(self, value):
+        if value == 'me' or '':
+            raise serializers.ValidationError(
+                {'me нельзя использовать в качестве username'},
+            )
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(
+                {'username уже существует'},
+            )
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                {'email уже существует'},
+            )
+        return value
 
 
 class CategorySerializer(serializers.ModelSerializer):

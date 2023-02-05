@@ -30,7 +30,7 @@ class User(AbstractUser):
     )
 
     first_name = models.CharField(
-        max_length=150, verbose_name='Имя', help_text='Имя', blank=True
+        max_length=150, verbose_name='Имя', blank=True
     )
     last_name = models.CharField(
         max_length=150,
