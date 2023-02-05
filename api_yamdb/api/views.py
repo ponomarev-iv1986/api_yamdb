@@ -24,6 +24,8 @@ from rest_framework.decorators import action
 
 # Create your views here.
 class RegView(APIView):
+    '''View для регистрации юзера и получение кода подтверждения'''
+
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
@@ -54,6 +56,8 @@ class RegView(APIView):
 
 
 class TokenGetView(APIView):
+    '''View для получения токена, эндпойнт'''
+
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
@@ -77,6 +81,8 @@ class TokenGetView(APIView):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
+    '''Viewset для'''
+
     permission_classes = (IsAdmin,)
     queryset = User.objects.all()
     serializer_class = UsersSerializer
@@ -86,11 +92,19 @@ class UsersViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    # @action(
-    #     detail=False,
-    #     methods=['get', 'patch'],
-    #     url_path='me',
-    #     permission_classes=(permissions.IsAuthenticated,),
-    # )
-    # def me(self, request):
-    #     pass
+    @action(
+        detail=False,
+        methods=['get', 'patch'],
+        url_path='me',
+        permission_classes=(permissions.IsAuthenticated,),
+    )
+    def me(self, request):
+        serializer = UsersSerializer(request.user)
+        if request.method == 'PATCH':
+            serializer = UsersSerializer(
+                request.user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)

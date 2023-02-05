@@ -67,6 +67,7 @@ class UsersSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254, required=True, allow_blank=False
     )
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
