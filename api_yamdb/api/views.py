@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import (
-    UserRegSerializer,
+    SignUpSerializer,
     TokenGetSerializer,
     UsersSerializer,
 )
@@ -13,41 +13,39 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
-from .permissions import IsSuperUser
+
+from .permissions import AdminOrSuperUser
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
-from .serializers import (CategorySerializer,
-                          GenreSerializer,
-                          TitleSerializer,
-                          TitleListRetrieveSerializer,
-                          ReviewSerializer,
-                          CommentSerializer)
-from reviews.models import (Category,
-                            Genre,
-                            Title,
-                            Review,
-                            Comment)
-from .permissions import (IsAdminOrSuperuser,
-                          IsModeratorOrAuthor)
+from .serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    TitleListRetrieveSerializer,
+    ReviewSerializer,
+    CommentSerializer,
+)
+from reviews.models import Category, Genre, Title, Review, Comment
+from .permissions import IsAdminOrSuperuser, IsModeratorOrAuthor
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 
-class RegView(APIView):
-    '''View для регистрации юзера и получение кода подтверждения, эндпойнт /api/v1/auth/signup/'''
+class SignUpView(APIView):
+    '''View-класс для регистрации юзера и получение кода подтверждения,
+    эндпойнт /api/v1/auth/signup/'''
 
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = UserRegSerializer(data=request.data)
+        serializer = SignUpSerializer(data=request.data)
         if User.objects.filter(
             username=request.data.get('username'),
             email=request.data.get('email'),
         ).exists():
             return Response(request.data, status=status.HTTP_200_OK)
         if serializer.is_valid():
-            username = serializer.validated_data.get('username')
             email = serializer.validated_data.get('email')
             confirmation_code = uuid.uuid4()
             send_mail(
@@ -57,9 +55,9 @@ class RegView(APIView):
                 recipient_list=[email],
             )
             serializer.save()
-            User.objects.filter(username=username).update(
-                confirmation_code=confirmation_code, is_active=True
-            )
+            User.objects.filter(
+                username=serializer.validated_data.get('username')
+            ).update(confirmation_code=confirmation_code, is_active=True)
             return Response(
                 serializer.validated_data, status=status.HTTP_200_OK
             )
@@ -67,17 +65,19 @@ class RegView(APIView):
 
 
 class TokenGetView(APIView):
-    '''View для получения токена, эндпойнт /api/v1/auth/token/'''
+    '''View-класс для получения токена, эндпойнт /api/v1/auth/token/'''
 
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         serializer = TokenGetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data.get('username')
-        user = get_object_or_404(User, username=username)
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        if user.confirmation_code == confirmation_code:
+        user = get_object_or_404(
+            User, username=serializer.validated_data.get('username')
+        )
+        if user.confirmation_code == serializer.validated_data.get(
+            'confirmation_code'
+        ):
             token = RefreshToken.for_user(user)
             return Response(
                 {'token': str(token.access_token)},
@@ -91,9 +91,9 @@ class TokenGetView(APIView):
 
 class UsersViewSet(viewsets.ModelViewSet):
     '''Viewset получения, изменения информации о пользовтелях,
-    эндпойнты /api/v1/users/, /api/v1/users/me/'''
+    эндпойнты: /api/v1/users/, /api/v1/users/me/'''
 
-    permission_classes = (IsSuperUser,)
+    permission_classes = (AdminOrSuperUser,)
     queryset = User.objects.all()
     serializer_class = UsersSerializer
     pagination_class = PageNumberPagination
@@ -115,7 +115,7 @@ class UsersViewSet(viewsets.ModelViewSet):
                 request.user, data=request.data, partial=True
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(role=request.user.role, partial=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -151,8 +151,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsModeratorOrAuthor)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsModeratorOrAuthor)
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -167,8 +166,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsModeratorOrAuthor)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsModeratorOrAuthor)
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
