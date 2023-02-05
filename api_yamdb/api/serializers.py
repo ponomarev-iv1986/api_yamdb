@@ -4,6 +4,11 @@ from django.core.validators import RegexValidator
 from rest_framework.validators import ValidationError
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from reviews.models import (Category,
+                            Genre,
+                            Title,
+                            Review,
+                            Comment)
 
 
 class UserRegSerializer(serializers.ModelSerializer):
@@ -80,6 +85,7 @@ class UsersSerializer(serializers.ModelSerializer):
             'role',
         )
 
+
     def validate_username(self, value):
         if value == 'me' or '':
             raise serializers.ValidationError(
@@ -97,3 +103,88 @@ class UsersSerializer(serializers.ModelSerializer):
                 {'email уже существует'},
             )
         return value
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ('name', 'slug')
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Genre
+        fields = ('name', 'slug')
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    genre = serializers.SlugRelatedField(
+        many=True,
+        slug_field='slug',
+        queryset=Genre.objects.all()
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+
+
+class TitleListRetrieveSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField()
+    genre = GenreSerializer(read_only=True, many=True)
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        read_only=True
+    )
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+
+    def get_rating(self, obj):
+        reviews = obj.reviews.all()
+        scores = []
+        for review in reviews:
+            scores.append(review.score)
+        if scores:
+            return int(sum(scores) / len(scores))
+        return 0
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('pub_date',)
+
+    def validate(self, data):
+        user = self.context.get('request').user
+        if user == data['author']:
+            raise serializers.ValidationError(
+                'Нельзя написать отзыв самому себе!'
+            )
+        return data
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
+        read_only_fields = ('pub_date',)
