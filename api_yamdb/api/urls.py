@@ -1,6 +1,11 @@
 from django.urls import include, path
 from .views import RegView, TokenGetView, UsersViewSet, UserMeViewSet
 from rest_framework.routers import DefaultRouter
+from .views import (CategoryViewSet,
+                    GenreViewSet,
+                    TitleViewSet,
+                    ReviewViewSet,
+                    CommentViewSet)
 
 router = DefaultRouter()
 
@@ -8,6 +13,16 @@ router = DefaultRouter()
 router.register('users', UsersViewSet, basename='users')
 router.register(r'users/(?P<username>\d+)', UsersViewSet, basename='users')
 router.register('users/me', UserMeViewSet, basename='usersme')
+router.register('categories', CategoryViewSet)
+router.register('genres', GenreViewSet)
+router.register('titles', TitleViewSet)
+router.register(r'titles/(?P<title_id>\d+)/reviews',
+                ReviewViewSet, basename='reviews')
+router.register(
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+    CommentViewSet,
+    basename='comments'
+)
 
 urlpatterns = [
     path(

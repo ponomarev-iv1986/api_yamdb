@@ -26,7 +26,7 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Genre(models.Model):
@@ -47,7 +47,7 @@ class Genre(models.Model):
         verbose_name_plural = 'Жанры'
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Title(models.Model):
@@ -73,8 +73,7 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
-        related_name='titles',
-        verbose_name='жанр'
+        through='GenreTitle'
     )
 
     class Meta:
@@ -82,7 +81,16 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
+
+
+class GenreTitle(models.Model):
+    '''Связь модедей Genre и Title.'''
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.genre} {self.title}'
 
 
 class Review(models.Model):
@@ -126,10 +134,11 @@ class Review(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return f'{self.text}'
+        return self.text
 
 
 class Comment(models.Model):
+    '''Комментарии.'''
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
@@ -155,4 +164,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return f'{self.text}'
+        return self.text
