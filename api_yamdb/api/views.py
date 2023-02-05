@@ -8,15 +8,12 @@ from .serializers import (
 from rest_framework.response import Response
 import uuid
 from django.core.mail import send_mail
-from users.models import User
+from users.models import User, USER_ROLE
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
-from .permissions import (
-    IsAdmin,
-    IsUser,
-)
+from .permissions import IsAdmin, IsSuperUser
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -24,7 +21,7 @@ from rest_framework.decorators import action
 
 # Create your views here.
 class RegView(APIView):
-    '''View для регистрации юзера и получение кода подтверждения'''
+    '''View для регистрации юзера и получение кода подтверждения, эндпойнт /api/v1/auth/signup/'''
 
     permission_classes = (permissions.AllowAny,)
 
@@ -56,7 +53,7 @@ class RegView(APIView):
 
 
 class TokenGetView(APIView):
-    '''View для получения токена, эндпойнт'''
+    '''View для получения токена, эндпойнт /api/v1/auth/token/'''
 
     permission_classes = (permissions.AllowAny,)
 
@@ -81,9 +78,10 @@ class TokenGetView(APIView):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
-    '''Viewset для'''
+    '''Viewset получения, изменения информации о пользовтелях,
+    эндпойнты /api/v1/users/, /api/v1/users/me/'''
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsSuperUser,)
     queryset = User.objects.all()
     serializer_class = UsersSerializer
     pagination_class = PageNumberPagination
@@ -98,7 +96,7 @@ class UsersViewSet(viewsets.ModelViewSet):
         url_path='me',
         permission_classes=(permissions.IsAuthenticated,),
     )
-    def me(self, request):
+    def users_me(self, request):
         serializer = UsersSerializer(request.user)
         if request.method == 'PATCH':
             serializer = UsersSerializer(
