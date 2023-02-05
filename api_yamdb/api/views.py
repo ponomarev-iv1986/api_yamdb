@@ -8,12 +8,12 @@ from .serializers import (
 from rest_framework.response import Response
 import uuid
 from django.core.mail import send_mail
-from users.models import User, USER_ROLE
+from users.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
-from .permissions import IsAdmin, IsSuperUser
+from .permissions import IsSuperUser
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -59,18 +59,16 @@ class TokenGetView(APIView):
 
     def post(self, request):
         serializer = TokenGetSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data.get('username')
-            user = get_object_or_404(User, username=username)
-            confirmation_code = serializer.validated_data.get(
-                'confirmation_code'
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data.get('username')
+        user = get_object_or_404(User, username=username)
+        confirmation_code = serializer.validated_data.get('confirmation_code')
+        if user.confirmation_code == confirmation_code:
+            token = RefreshToken.for_user(user)
+            return Response(
+                {'token': str(token.access_token)},
+                status=status.HTTP_200_OK,
             )
-            if user.confirmation_code == confirmation_code:
-                token = RefreshToken.for_user(user)
-                return Response(
-                    {'token': str(token.access_token)},
-                    status=status.HTTP_200_OK,
-                )
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST,
