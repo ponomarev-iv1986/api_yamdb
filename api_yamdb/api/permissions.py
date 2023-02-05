@@ -32,3 +32,22 @@ class IsAdmin(BasePermission):
             if request.user.role in self.allowed_user_roles:
                 return True
         return False
+
+
+class IsAdminOrSuperuser(BasePermission):
+
+    def has_permission(self, request, view):
+        return (
+            request.user.role == 'admin'
+            or request.user.is_superuser
+        )
+
+
+class IsModeratorOrAuthor(BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        return (
+            request.user.role == 'moderator'
+            or request.user == obj.author
+            or request.method in SAFE_METHODS
+        )
