@@ -164,6 +164,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('pub_date',)
+    
+    def validate(self, data):
+        if 'title' in data:
+            raise serializers.ValidationError(
+                'Нельзя написать более олного отзыва!'
+            )
+        return data 
 
 
 class CommentSerializer(serializers.ModelSerializer):

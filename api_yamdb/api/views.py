@@ -140,7 +140,6 @@ class CategoryViewSet(
         return super().get_permissions()
 
 
-
 class GenreViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -161,11 +160,23 @@ class GenreViewSet(
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
     permission_classes = (IsAdminOrSuperuser,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre',
-                        'name', 'year')
+
+    def get_queryset(self):
+        queryset = Title.objects.all()
+        category = self.request.query_params.get('category')
+        genre = self.request.query_params.get('genre')
+        name = self.request.query_params.get('name')
+        year = self.request.query_params.get('year')
+        if category is not None:
+            queryset = queryset.filter(category__slug=category)
+        elif genre is not None:
+            queryset = queryset.filter(genre__slug=genre)
+        elif name is not None:
+            queryset = queryset.filter(name=name)
+        elif year is not None:
+            queryset = queryset.filter(year=year)
+        return queryset
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
