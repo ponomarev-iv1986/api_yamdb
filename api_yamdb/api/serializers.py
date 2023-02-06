@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from users.models import User
+from users.models import User, USER_ROLE
 from django.core.validators import RegexValidator
 from rest_framework.validators import ValidationError
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from reviews.models import Category, Genre, Title, Review, Comment
 from reviews.models import (Category,
                             Genre,
                             Title,
@@ -13,7 +14,7 @@ from reviews.models import (Category,
 from rest_framework.validators import UniqueTogetherValidator
 
 
-class UserRegSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=254, allow_blank=False)
     username = serializers.CharField(
         max_length=150,
@@ -33,7 +34,7 @@ class UserRegSerializer(serializers.ModelSerializer):
         )
 
     def validate_username(self, value):
-        if value == 'me' or '':
+        if value == 'me':
             raise serializers.ValidationError(
                 {'me нельзя использовать в качестве username'},
             )
@@ -74,7 +75,6 @@ class UsersSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254, required=True, allow_blank=False
     )
-    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -86,12 +86,9 @@ class UsersSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+        read_only_field = ('role',)
 
     def validate_username(self, value):
-        if value == 'me' or '':
-            raise serializers.ValidationError(
-                {'me нельзя использовать в качестве username'},
-            )
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError(
                 {'username уже существует'},
@@ -107,14 +104,12 @@ class UsersSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Genre
         fields = ('name', 'slug')
@@ -122,13 +117,10 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
-        many=True,
-        slug_field='slug',
-        queryset=Genre.objects.all()
+        many=True, slug_field='slug', queryset=Genre.objects.all()
     )
     category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all()
+        slug_field='slug', queryset=Category.objects.all()
     )
 
     class Meta:
@@ -143,8 +135,15 @@ class TitleListRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'rating',
-                  'description', 'genre', 'category')
+        fields = (
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category',
+        )
 
     def get_rating(self, obj):
         reviews = obj.reviews.all()
@@ -158,8 +157,7 @@ class TitleListRetrieveSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username'
+        read_only=True, slug_field='username'
     )
 
     class Meta:
@@ -170,8 +168,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username'
+        read_only=True, slug_field='username'
     )
 
     class Meta:
