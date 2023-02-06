@@ -7,8 +7,10 @@ from django.shortcuts import get_object_or_404
 from reviews.models import (Category,
                             Genre,
                             Title,
+                            GenreTitle,
                             Review,
                             Comment)
+from rest_framework.validators import UniqueTogetherValidator
 
 
 class UserRegSerializer(serializers.ModelSerializer):
@@ -85,7 +87,6 @@ class UsersSerializer(serializers.ModelSerializer):
             'role',
         )
 
-
     def validate_username(self, value):
         if value == 'me' or '':
             raise serializers.ValidationError(
@@ -138,10 +139,7 @@ class TitleSerializer(serializers.ModelSerializer):
 class TitleListRetrieveSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
     genre = GenreSerializer(read_only=True, many=True)
-    category = serializers.SlugRelatedField(
-        slug_field='slug',
-        read_only=True
-    )
+    category = CategorySerializer(read_only=True)
 
     class Meta:
         model = Title
@@ -155,7 +153,7 @@ class TitleListRetrieveSerializer(serializers.ModelSerializer):
             scores.append(review.score)
         if scores:
             return int(sum(scores) / len(scores))
-        return 0
+        return None
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -168,14 +166,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('pub_date',)
-
-    def validate(self, data):
-        user = self.context.get('request').user
-        if user == data['author']:
-            raise serializers.ValidationError(
-                'Нельзя написать отзыв самому себе!'
-            )
-        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
