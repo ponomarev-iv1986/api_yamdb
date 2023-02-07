@@ -1,17 +1,8 @@
-from rest_framework import serializers
-from users.models import User, USER_ROLE
 from django.core.validators import RegexValidator
-from rest_framework.validators import ValidationError
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
-from reviews.models import Category, Genre, Title, Review, Comment
-from reviews.models import (Category,
-                            Genre,
-                            Title,
-                            GenreTitle,
-                            Review,
-                            Comment)
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework import serializers
+
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import User
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -164,13 +155,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('pub_date',)
-    
-    def validate(self, data):
-        if 'title' in data:
-            raise serializers.ValidationError(
-                'Нельзя написать более олного отзыва!'
-            )
-        return data 
 
 
 class CommentSerializer(serializers.ModelSerializer):

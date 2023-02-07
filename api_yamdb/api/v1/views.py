@@ -1,43 +1,32 @@
-from rest_framework.views import APIView
-from rest_framework import status
-from .serializers import (
-    SignUpSerializer,
-    TokenGetSerializer,
-    UsersSerializer,
-)
-from rest_framework.response import Response
 import uuid
-from django.core.mail import send_mail
-from users.models import User
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers, viewsets
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import permissions
 
-from .permissions import AdminOrSuperUser, ReviewPermission
-from rest_framework import filters
-from rest_framework.pagination import PageNumberPagination
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from .serializers import (
-    CategorySerializer,
-    GenreSerializer,
-    TitleSerializer,
-    TitleListRetrieveSerializer,
-    ReviewSerializer,
-    CommentSerializer,
-)
-from reviews.models import Category, Genre, Title, Review, Comment
-from .permissions import IsAdminOrSuperuser, IsModeratorOrAuthor
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework import mixins
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from reviews.models import Category, Genre, Review, Title
+from users.models import User
+
+from .permissions import AdminOrSuperUser, IsAdminOrSuperuser, ReviewPermission
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer, SignUpSerializer,
+                          TitleListRetrieveSerializer, TitleSerializer,
+                          TokenGetSerializer, UsersSerializer)
 
 
 class SignUpView(APIView):
-    '''View-класс для регистрации юзера и получение кода подтверждения,
-    эндпойнт /api/v1/auth/signup/'''
+    """
+    Регистрация пользователя и получение кода подтверждения.
+    """
 
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
@@ -66,9 +55,11 @@ class SignUpView(APIView):
 
 
 class TokenGetView(APIView):
-    '''View-класс для получения токена, эндпойнт /api/v1/auth/token/'''
+    """
+    Получение токена.
+    """
 
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = TokenGetSerializer(data=request.data)
@@ -91,13 +82,13 @@ class TokenGetView(APIView):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
-    '''Viewset получения, изменения информации о пользовтелях,
-    эндпойнты: /api/v1/users/, /api/v1/users/me/'''
+    """
+    Получение, изменение информации о пользователях.
+    """
 
     permission_classes = (AdminOrSuperUser,)
     queryset = User.objects.all()
     serializer_class = UsersSerializer
-    pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('username',)
     lookup_field = 'username'
@@ -107,7 +98,7 @@ class UsersViewSet(viewsets.ModelViewSet):
         detail=False,
         methods=['get', 'patch'],
         url_path='me',
-        permission_classes=(permissions.IsAuthenticated,),
+        permission_classes=(IsAuthenticated,),
     )
     def users_me(self, request):
         serializer = UsersSerializer(request.user)
@@ -121,12 +112,12 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CategoryViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class CategoryViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
+                      mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """
+    Получение, добавление, удаление категорий.
+    """
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'
@@ -140,12 +131,12 @@ class CategoryViewSet(
         return super().get_permissions()
 
 
-class GenreViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """
+    Получение, добавление, удаление жанров.
+    """
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     lookup_field = 'slug'
@@ -160,6 +151,10 @@ class GenreViewSet(
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """
+    Получение, добавление, изменение, удаление произведений.
+    """
+
     permission_classes = (IsAdminOrSuperuser,)
 
     def get_queryset(self):
@@ -190,6 +185,10 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    Получение, добавление, изменение, удаление отзывов.
+    """
+
     serializer_class = ReviewSerializer
     permission_classes = (ReviewPermission,)
 
@@ -208,9 +207,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Получение, добавление, изменение, удаление произведений.
+    """
+
     serializer_class = CommentSerializer
     permission_classes = (ReviewPermission,)
-    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         review = get_object_or_404(Review, id=self.kwargs['review_id'])

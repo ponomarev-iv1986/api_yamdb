@@ -1,15 +1,17 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .validators import validate_year
 from users.models import User
 
-MIN_REVIEW_SCORE = 1
-MAX_REVIEW_SCORE = 10
+from .validators import validate_year
+
+MIN_REV_SCORE = 1
+MAX_REV_SCORE = 10
 
 
 class Category(models.Model):
-    '''Категории (типы).'''
+    """Категории (типы)."""
+
     name = models.CharField(
         'имя категории',
         max_length=256,
@@ -30,7 +32,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    '''Жанры.'''
+    """Жанры."""
+
     name = models.CharField(
         'имя жанра',
         max_length=256,
@@ -51,7 +54,8 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    '''Произведения.'''
+    """Произведения."""
+
     name = models.CharField(
         'название',
         max_length=256
@@ -85,7 +89,8 @@ class Title(models.Model):
 
 
 class GenreTitle(models.Model):
-    '''Связь модедей Genre и Title.'''
+    """Связь моделей Genre и Title."""
+
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
@@ -94,7 +99,8 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    '''Отзывы.'''
+    """Отзывы."""
+
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -113,10 +119,12 @@ class Review(models.Model):
     score = models.IntegerField(
         'оценка',
         validators=(
-            MinValueValidator(MIN_REVIEW_SCORE),
-            MaxValueValidator(MAX_REVIEW_SCORE)
+            MinValueValidator(MIN_REV_SCORE),
+            MaxValueValidator(MAX_REV_SCORE)
         ),
-        error_messages={'validators': 'Оценка от 1 до 10!'}
+        error_messages={
+            'validators': f'Оценка от {MIN_REV_SCORE} до {MAX_REV_SCORE}!'
+        }
     )
     pub_date = models.DateTimeField(
         'дата публикации',
@@ -138,7 +146,8 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    '''Комментарии.'''
+    """Комментарии."""
+
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,

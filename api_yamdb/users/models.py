@@ -1,8 +1,5 @@
-from django.db import models
-
-# Create your models here.
 from django.contrib.auth.models import AbstractUser
-
+from django.db import models
 
 ADMIN = 'admin'
 MODERATOR = 'moderator'
@@ -16,6 +13,7 @@ USER_ROLE = (
 
 
 class User(AbstractUser):
+    """Пользователи."""
 
     username = models.CharField(
         max_length=150,
