@@ -10,7 +10,7 @@ import uuid
 from django.core.mail import send_mail
 from users.models import User
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
 
@@ -199,6 +199,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
+        if Review.objects.filter(
+                author=self.request.user, title=title).exists():
+            raise serializers.ValidationError(
+                'Ваш отзыв на это произведение уже существует'
+            )
         serializer.save(author=self.request.user, title=title)
 
 
