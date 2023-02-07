@@ -10,7 +10,6 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
@@ -164,13 +163,13 @@ class TitleViewSet(viewsets.ModelViewSet):
         name = self.request.query_params.get('name')
         year = self.request.query_params.get('year')
         if category is not None:
-            queryset = queryset.filter(category__slug=category)
-        elif genre is not None:
-            queryset = queryset.filter(genre__slug=genre)
-        elif name is not None:
-            queryset = queryset.filter(name=name)
-        elif year is not None:
-            queryset = queryset.filter(year=year)
+            return queryset.filter(category__slug=category)
+        if genre is not None:
+            return queryset.filter(genre__slug=genre)
+        if year is not None:
+            return queryset.filter(year=year)
+        if name is not None:
+            return queryset.filter(name=name)
         return queryset
 
     def get_permissions(self):
