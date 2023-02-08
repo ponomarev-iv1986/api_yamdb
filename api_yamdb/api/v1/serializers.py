@@ -1,4 +1,5 @@
 from django.core.validators import RegexValidator
+from django.db.models import Avg
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
@@ -136,13 +137,11 @@ class TitleListRetrieveSerializer(serializers.ModelSerializer):
         )
 
     def get_rating(self, obj):
-        reviews = obj.reviews.all()
-        scores = []
-        for review in reviews:
-            scores.append(review.score)
-        if scores:
-            return int(sum(scores) / len(scores))
-        return None
+        raiting = Review.objects.filter(
+            title_id=obj.id).aggregate(Avg('score'))['score__avg']
+        if raiting is not None:
+            return int(raiting)
+        return raiting
 
 
 class ReviewSerializer(serializers.ModelSerializer):

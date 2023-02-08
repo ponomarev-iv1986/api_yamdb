@@ -13,11 +13,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
-from .permissions import AdminOrSuperUser, IsAdminOrSuperuser, ReviewPermission
+from .permissions import (IsAdminOrSuperuserForUsers, IsAdminOrSuperuser,
+                          IsAdminOrModeratorOrAuthor)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer, SignUpSerializer,
                           TitleListRetrieveSerializer, TitleSerializer,
                           TokenGetSerializer, UsersSerializer)
+from .filters import TitleFilter
 
 
 class SignUpView(APIView):
@@ -85,7 +87,8 @@ class UsersViewSet(viewsets.ModelViewSet):
     Получение, изменение информации о пользователях.
     """
 
-    permission_classes = (AdminOrSuperUser,)
+    permission_classes = (IsAuthenticated,
+                          IsAdminOrSuperuserForUsers)
     queryset = User.objects.all()
     serializer_class = UsersSerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
@@ -120,14 +123,10 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'
-    permission_classes = (IsAdminOrSuperuser,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrSuperuser)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
 
 class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
@@ -139,14 +138,10 @@ class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     lookup_field = 'slug'
-    permission_classes = (IsAdminOrSuperuser,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrSuperuser)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -154,28 +149,11 @@ class TitleViewSet(viewsets.ModelViewSet):
     Получение, добавление, изменение, удаление произведений.
     """
 
-    permission_classes = (IsAdminOrSuperuser,)
-
-    def get_queryset(self):
-        queryset = Title.objects.all()
-        category = self.request.query_params.get('category')
-        genre = self.request.query_params.get('genre')
-        name = self.request.query_params.get('name')
-        year = self.request.query_params.get('year')
-        if category is not None:
-            return queryset.filter(category__slug=category)
-        if genre is not None:
-            return queryset.filter(genre__slug=genre)
-        if year is not None:
-            return queryset.filter(year=year)
-        if name is not None:
-            return queryset.filter(name=name)
-        return queryset
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
+    queryset = Title.objects.all()
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrSuperuser)
+    filter_backends = (TitleFilter,)
+    filterset_fields = ('name', 'year', 'category', 'genre')
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -189,7 +167,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = ReviewSerializer
-    permission_classes = (ReviewPermission,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrModeratorOrAuthor)
 
     def get_queryset(self):
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -211,7 +190,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = (ReviewPermission,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrModeratorOrAuthor)
 
     def get_queryset(self):
         review = get_object_or_404(Review, id=self.kwargs['review_id'])
