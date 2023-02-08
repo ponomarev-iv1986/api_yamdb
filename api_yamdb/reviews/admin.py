@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Comment, Genre, Review, Title
+from .models import Category, Comment, Genre, GenreTitle, Review, Title
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -26,7 +26,13 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ('title',)
 
 
+class GenreInLine(admin.StackedInline):
+    model = GenreTitle
+    extra = 3
+
+
 class TitleAdmin(admin.ModelAdmin):
+    inlines = (GenreInLine,)
     list_display = ('name', 'year', 'category', 'description')
     search_fields = ('name',)
 
