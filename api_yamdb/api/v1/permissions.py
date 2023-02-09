@@ -6,7 +6,8 @@ from users.userroles import UserRoles
 class IsAdminOrSuperuserForUsers(BasePermission):
     def has_permission(self, request, view):
         return (
-            request.user.role == UserRoles.ADMIN or request.user.is_superuser
+            request.user.role == UserRoles.ADMIN
+            or request.user.is_superuser
         )
 
 
@@ -14,7 +15,7 @@ class IsAdminOrSuperuser(BasePermission):
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
-            or request.user.role == 'admin'
+            or request.user.role == UserRoles.ADMIN
             or request.user.is_superuser
         )
 
@@ -25,7 +26,7 @@ class IsAdminOrModeratorOrAuthor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return (
             request.method in SAFE_METHODS
-            or request.user.role == 'admin'
-            or request.user.role == 'moderator'
+            or request.user.role == UserRoles.ADMIN
+            or request.user.role == UserRoles.MODERATOR
             or obj.author == request.user
         )
