@@ -1,31 +1,10 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
-ADMIN = 'admin'
-MODERATOR = 'moderator'
-USER = 'user'
-
-USER_ROLE = (
-    (USER, 'user'),
-    (MODERATOR, 'moderator'),
-    (ADMIN, 'admin'),
-)
+from .userroles import UserRoles
 
 
 class User(AbstractUser):
     """Пользователи."""
-
-    username = models.CharField(
-        max_length=150,
-        verbose_name='Логин',
-        unique=True,
-    )
-    email = models.EmailField(
-        max_length=254,
-        verbose_name='Email',
-        unique=True,
-        blank=False,
-    )
 
     first_name = models.CharField(
         max_length=150, verbose_name='Имя', blank=True
@@ -43,12 +22,24 @@ class User(AbstractUser):
     role = models.CharField(
         max_length=100,
         verbose_name='Роль',
-        choices=USER_ROLE,
-        default=USER,
+        choices=UserRoles,
+        default=UserRoles.USER,
     )
     confirmation_code = models.CharField(
         max_length=50, blank=True, verbose_name='Проверочный код'
     )
 
-    def __str__(self):
-        return self.username
+    @property
+    def is_user(self):
+        if self.role == UserRoles.USER:
+            return True
+
+    @property
+    def is_moderator(self):
+        if self.role == UserRoles.MODERATOR:
+            return True
+
+    @property
+    def is_admin(self):
+        if self.role == UserRoles.ADMIN:
+            return True
