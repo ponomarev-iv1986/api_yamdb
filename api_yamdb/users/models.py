@@ -6,14 +6,6 @@ from .userroles import UserRoles
 class User(AbstractUser):
     """Пользователи."""
 
-    first_name = models.CharField(
-        max_length=150, verbose_name='Имя', blank=True
-    )
-    last_name = models.CharField(
-        max_length=150,
-        verbose_name='Фамилия',
-        blank=True,
-    )
     bio = models.TextField(
         max_length=1000,
         verbose_name='Биография',
