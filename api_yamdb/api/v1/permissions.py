@@ -1,10 +1,13 @@
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS, BasePermission
+from users.userroles import UserRoles
 
 
 class IsAdminOrSuperuserForUsers(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role == 'admin' or request.user.is_superuser
+        return (
+            request.user.role == UserRoles.ADMIN or request.user.is_superuser
+        )
 
 
 class IsAdminOrSuperuser(BasePermission):
