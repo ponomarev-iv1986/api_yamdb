@@ -1,6 +1,13 @@
 ### Описание проекта:
 
-Backend проекта YaMDb
+Backend проекта YaMDb - базы отзывов о фильмах, книгах и музыке.
+
+### Стек технологий:
+
+- Python 3.8
+- Django 3.2
+- Django REST Framework 3.12.4
+- PyJWT
 
 ### Как запустить проект:
 
@@ -33,7 +40,7 @@ python3 -m venv env
     ```
 
 ```
-python3 -m pip install --upgrade pip
+python -m pip install --upgrade pip
 ```
 
 Установить зависимости из файла requirements.txt:
